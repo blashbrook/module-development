@@ -89,7 +89,7 @@ CREATE TABLE `block` (
   PRIMARY KEY (`bid`),
   UNIQUE KEY `tmd` (`theme`,`module`,`delta`),
   KEY `list` (`theme`,`status`,`region`,`weight`,`module`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8 COMMENT='Stores block settings, such as region and visibility...';
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8 COMMENT='Stores block settings, such as region and visibility...';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172,6 +172,24 @@ CREATE TABLE `cache` (
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Generic cache table for caching things not separated out...';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `cache_admin_menu`
+--
+
+DROP TABLE IF EXISTS `cache_admin_menu`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `cache_admin_menu` (
+  `cid` varchar(255) NOT NULL DEFAULT '' COMMENT 'Primary Key: Unique cache ID.',
+  `data` longblob COMMENT 'A collection of data to cache.',
+  `expire` int(11) NOT NULL DEFAULT '0' COMMENT 'A Unix timestamp indicating when the cache entry should expire, or 0 for never.',
+  `created` int(11) NOT NULL DEFAULT '0' COMMENT 'A Unix timestamp indicating when the cache entry was created.',
+  `serialized` smallint(6) NOT NULL DEFAULT '0' COMMENT 'A flag to indicate whether content is serialized (1) or not (0).',
+  PRIMARY KEY (`cid`),
+  KEY `expire` (`expire`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Cache table for Administration menu to store client-side...';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -922,7 +940,7 @@ CREATE TABLE `menu_links` (
   KEY `menu_plid_expand_child` (`menu_name`,`plid`,`expanded`,`has_children`),
   KEY `menu_parents` (`menu_name`,`p1`,`p2`,`p3`,`p4`,`p5`,`p6`,`p7`,`p8`,`p9`),
   KEY `router_path` (`router_path`(128))
-) ENGINE=InnoDB AUTO_INCREMENT=309 DEFAULT CHARSET=utf8 COMMENT='Contains the individual links within a menu.';
+) ENGINE=InnoDB AUTO_INCREMENT=388 DEFAULT CHARSET=utf8 COMMENT='Contains the individual links within a menu.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1104,7 +1122,7 @@ CREATE TABLE `queue` (
   PRIMARY KEY (`item_id`),
   KEY `name_created` (`name`,`created`),
   KEY `expire` (`expire`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8 COMMENT='Stores items in queues.';
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8 COMMENT='Stores items in queues.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1278,7 +1296,7 @@ DROP TABLE IF EXISTS `sequences`;
 CREATE TABLE `sequences` (
   `value` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'The value of the sequence.',
   PRIMARY KEY (`value`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='Stores IDs.';
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COMMENT='Stores IDs.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1532,7 +1550,7 @@ CREATE TABLE `watchdog` (
   KEY `type` (`type`),
   KEY `uid` (`uid`),
   KEY `severity` (`severity`)
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8 COMMENT='Table that contains logs of all system events.';
+) ENGINE=InnoDB AUTO_INCREMENT=70 DEFAULT CHARSET=utf8 COMMENT='Table that contains logs of all system events.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1544,4 +1562,4 @@ CREATE TABLE `watchdog` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-06-16 19:58:16
+-- Dump completed on 2016-06-16 20:14:25
