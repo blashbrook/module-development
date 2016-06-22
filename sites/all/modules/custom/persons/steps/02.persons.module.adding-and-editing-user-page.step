@@ -11,7 +11,7 @@
  * Implements hook_form_alter().
  */
 function persons_form_alter(&$form, &$form_submit, $form_id) {
-
+  
   // Add checkbox to allow users to select whether to store search history.
   if (isset($form['#user_category']) && $form['#user_category'] == 'account') { // Added isset after recording.
     $account = $form['#user'];
@@ -45,7 +45,7 @@ function persons_save_search_submit($form, &$form_submit) {
   $account = $user;
 
   // If the user hasn't chosen to store history, return.
-  if (!isset($account->data['store_search_history']) || $account->data['store_search_history'] != 1) {
+  if ($account->data['store_search_history'] != 1) {
     return;
   }
 
@@ -70,5 +70,43 @@ function persons_user_presave(&$edit, $account, $category) {
     $edit['data']['store_search_history'] = $edit['store_search_history'];
   }
 
+  return;
+}
+
+
+/**
+ * Implements hook_user_view().
+ *
+ * For more information see:
+ * http://api.drupal.org/api/drupal/modules--user--user.api.php/function/hook_user_view/7
+ */
+function persons_user_view($account, $view_mode, $langcode) {
+
+  // Render content as a list.
+  if (is_array($account->data['search_history'])) {
+    foreach ($account->data['search_history'] as $value) {
+      $items[] = l($value, 'search/node/' . $value);
+    }
+  }
+  if (count($items) > 0) {
+    $account->content['search_history'] = array(
+      '#theme' => 'item_list',
+      '#items' => $items,
+      '#title' => t('Search history'),
+      '#weight' => 10,
+    );
+  }
+  return;
+}
+
+
+/**
+ * Implements hook_user_view_alter().
+ * 
+ * For more information see:
+ * http://api.drupal.org/api/drupal/modules--user--user.api.php/function/hook_user_view_alter/7
+ */
+function persons_user_view_alter(&$build) {
+  $build['summary']['member_for']['#title'] = 'Really special person for:';
   return;
 }
