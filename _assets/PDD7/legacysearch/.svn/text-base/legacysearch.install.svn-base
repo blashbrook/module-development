@@ -1,0 +1,47 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function legacysearch_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE technote (
+        id int NOT NULL,
+        title varchar(255) NOT NULL,
+        note text NOT NULL,
+        last_modified int NOT NULL,
+        PRIMARY KEY  (id)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */");
+      db_query("INSERT INTO technote VALUES (1, 'Web 1.0 Emulator', 
+        '<p>This handy product lets you emulate the blink tag but in 
+        hardware...a perfect gift.</p>', 1172542517)");
+      db_query("INSERT INTO technote VALUES (2, 'Squishy Debugger', 
+        '<p>Fully functional debugger inside a squishy gel case. 
+        The embedded ARM processor heats up...</p>', 1172502517)");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE technote (
+        id int NOT NULL,
+        title varchar(255) NOT NULL,
+        note text NOT NULL,
+        last_modified int NOT NULL,
+        PRIMARY KEY  (id)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */");
+      db_query("INSERT INTO technote VALUES (1, 'Web 1.0 Emulator', 
+        '<p>This handy product lets you emulate the blink tag but in 
+        hardware...a perfect gift.</p>', 1172542517)");
+      db_query("INSERT INTO technote VALUES (2, 'Squishy Debugger', 
+        '<p>Fully functional debugger inside a squishy gel case. 
+        The embedded ARM processor heats up...</p>', 1172502517)");
+      break;
+  }
+}
+/**
+ * Implementation of hook_uninstall().
+ */
+function legacysearch_uninstall() {
+  db_query('DROP TABLE {technote}');
+}

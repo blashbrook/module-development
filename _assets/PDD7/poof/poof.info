@@ -1,0 +1,5 @@
+; $Id$
+name = Poof
+description = Demonstrates AHAH forms.
+package = Pro Drupal Development
+core = 6.x

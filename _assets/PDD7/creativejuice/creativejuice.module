@@ -1,0 +1,97 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * A silly module to assist whizbang novelists who are in a rut by providing a
+ * random sentence generator for their posts.
+ */
+ 
+/**
+ * Implementation of hook_filter().
+ */
+function creativejuice_filter($op, $delta = 0, $format = -1, $text = '') {
+  switch ($op) {
+    case 'list':
+      return array(
+        0 => t('Creative Juice filter')
+      );
+
+    case 'description':
+      return t('Enables users to insert random sentences into their posts.');
+
+    case 'settings':
+      // No settings user interface for this filter. 
+      break;
+
+    case 'no cache':
+      // It's OK to cache this filter's output.
+      return FALSE;
+
+    case 'prepare':
+      // We're a simple filter and have no preparatory needs.
+      return $text;
+
+    case 'process':
+      return preg_replace_callback("|\[juice!\]|i", 
+        'creativejuice_sentence', $text);
+
+    default:
+      return $text;
+  }
+}
+
+/**
+ * Generate a random sentence.
+ */
+function creativejuice_sentence() {
+  $phrase[0][] = t('A majority of us believe');
+  $phrase[0][] = t('Generally speaking,');
+  $phrase[0][] = t('As times carry on');
+  $phrase[0][] = t('Barren in intellect,');
+  $phrase[0][] = t('Deficient in insight,');
+  $phrase[0][] = t('As blazing blue sky poured down torrents of light,');
+  $phrase[0][] = t('Aloof from the motley throng,');
+  
+  $phrase[1][] = t('life flowed in its accustomed stream');
+  $phrase[1][] = t('he ransacked the vocabulary');
+  $phrase[1][] = t('the grimaces and caperings of buffoonery');
+  $phrase[1][] = t('the mind freezes at the thought');
+  $phrase[1][] = t('reverting to another matter');
+  $phrase[1][] = t('he lived as modestly as a hermit');
+  
+  $phrase[2][] = t('through the red tape of officialdom.');
+  $phrase[2][] = t('as it set anew in some fresh and appealing form.');
+  $phrase[2][] = t('supported by evidence.');
+  $phrase[2][] = t('as fatal as the fang of the most venomous snake.');
+  $phrase[2][] = t('as full of spirit as a gray squirrel.');
+  $phrase[2][] = t('as dumb as a fish.');
+  $phrase[2][] = t('like a damp-handed auctioneer.');
+  $phrase[2][] = t('like a bald ferret.');
+  
+  foreach ($phrase as $key => $value) {
+    $rand_key = array_rand($phrase[$key]);
+    $sentence[] = $phrase[$key][$rand_key];
+  }
+  
+  return implode(' ', $sentence);
+}
+
+/**
+ * Implementation of hook_filter_tips().
+ */
+function creativejuice_filter_tips($delta, $format, $long = FALSE) {
+  if ($long) {
+    // Detailed explanation for example.com/?q=filter/tips page.
+    return t('The Creative Juice filter is for those times when your
+      brain is incapable of being creative. These times come for everyone,
+      when even strong coffee and a barrel of jelly beans does not
+      create the desired effect. When that happens, you can simply enter
+      the [juice!] tag into your posts...'
+    );
+  }
+  else {
+    // Short explanation for underneath a post's textarea.
+    return t('Insert a random sentence into your post with the [juice!] tag.');
+  }
+}

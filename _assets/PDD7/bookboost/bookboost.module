@@ -1,0 +1,20 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Tweaks relevancy of book nodes.
+ */
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function bookboost_nodeapi($node, $op) {
+  switch($op) {
+    case 'update index':
+      if ($node->type == 'book' && $node->book['plid']) {
+        $item = menu_link_load($node->book['plid']);
+        return '<h2>'. $item['title'] .'</h2>';
+      }
+  }
+}

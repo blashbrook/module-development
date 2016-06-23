@@ -1,0 +1,5 @@
+; $Id$
+name = Bunny
+description = Keeps track of giant bunnies.
+package = Pro Drupal Development
+core = 6.x

@@ -1,0 +1,211 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides a "joke" node type.
+ */
+
+/**
+ * Implementation of hook_node_info().
+ */
+function joke_node_info() {
+  // We return an array since a module can define multiple node types.
+  // We're only defining one node type, type 'joke'.
+  return array(
+    'joke' => array(
+      'name' => t('Joke'), // Required.
+      'module' => 'joke',  // Required.
+      'description' => t('Tell us your favorite joke!'), // Required.
+      'has_title' => TRUE,
+      'title_label' => t('Title'),
+      'has_body' => TRUE,
+      'body_label' => t('Joke'),
+      'min_word_count' => 2,
+      'locked' => TRUE
+    )
+  );
+}
+
+// Example - disable the page at node/add for al
+// nonsuperuser users.
+/*
+function joke_menu_alter(&$callbacks) { 
+  // If the user does not have 'administer nodes' permission, 
+  // disable the joke menu item by setting its access callback to FALSE. 
+  if (!user_access('administer nodes')) { 
+    $callbacks['node/add/joke']['access callback'] = FALSE; 
+    // Must unset access arguments or Drupal will use user_access() 
+    // as a default access callback. 
+    unset($callbacks['node/add/joke']['access arguments']); 
+  } 
+} 
+// */
+
+/**
+ * Implementation of hook_perm().
+ */
+function joke_perm() {
+  return array('create joke', 'edit own joke', 'edit any joke', 'delete own joke', 'delete any joke');
+}
+
+/**
+ * Implementation of hook_access().
+ */
+function joke_access($op, $node, $account) {
+  $is_author = $account->uid == $node->uid;
+  switch ($op) {
+    case 'create':
+      // Allow if user's role has 'create joke' permission.
+      return user_access('create joke', $account);
+
+    case 'update':
+      // Allow if user's role has 'edit own joke' permission and user is
+      // the author; or if the user's role has 'edit any joke' permission.
+      return user_access('edit own joke', $account) && is_author ||
+        user_access('edit any joke', $account);
+    case 'delete':
+      // Allow if user's role has 'delete own joke' permission and user is
+      // the author; or if the user's role has 'delete any joke' permission.
+      return user_access('delete own joke', $account) && $is_author ||
+        user_access('delete any joke', $account);
+  }
+}
+
+/**
+ * Implementation of hook_form().
+ */
+function joke_form($node) {
+  // Get metadata for this node type
+  // (we use it for labeling title and body fields).
+  // We defined this in joke_node_info().
+  $type = node_get_types('type', $node);
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5,
+    '#maxlength' => 255,
+  );
+  $form['body_filter']['body'] = array(
+    '#type' => 'textarea',
+    '#title' => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows' => 7,
+    '#required' => TRUE
+  );
+  $form['body_filter']['filter'] = filter_form($node->format);
+  $form['punchline'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Punchline'),
+    '#required' => TRUE,
+    '#default_value' => isset($node->punchline) ? $node->punchline : '',
+    '#weight' => 5
+  );
+  return $form;
+}
+
+/**
+ * Implementation of hook_validate().
+ */
+function joke_validate($node) {
+  // Enforce a minimum word length of 3.
+  if (isset($node->punchline) && str_word_count($node->punchline) < 3) {
+    $type = node_get_types('type', $node);
+    form_set_error('punchline', t('The punchline of your @type is too short. You need at least three words.', array('@type' => $type->name)));
+  }
+}
+
+/**
+ * Implementation of hook_insert().
+ */
+function joke_insert($node) {
+  db_query("INSERT INTO {joke} (nid, vid, punchline) VALUES (%d, %d, '%s')",
+    $node->nid, $node->vid, $node->punchline);
+}
+
+/**
+ * Implementation of hook_update().
+ */
+function joke_update($node) {
+  if ($node->revision) {
+    // New revision; treat it as a new record.
+    joke_insert($node);
+  }
+  else {
+    db_query("UPDATE {joke} SET punchline = '%s' WHERE vid = %d",
+      $node->punchline, $node->vid);
+  }
+}
+
+/**
+ * Implementation of hook_delete().
+ */
+function joke_delete(&$node) {
+  // Delete the related information we were saving for this node.
+  db_query('DELETE FROM {joke} WHERE nid = %d', $node->nid);
+}
+
+/**
+ * Implementation of hook_load().
+ */
+function joke_load($node) {
+  return db_fetch_object(db_query('SELECT punchline FROM {joke} WHERE vid = %d',
+    $node->vid));
+}
+
+/**
+ * Implementation of hook_view().
+ */
+function joke_view($node, $teaser = FALSE, $page = FALSE) {
+  // If $teaser is FALSE, the entire node is being displayed.
+  if (!$teaser) {
+    // Use Drupal's default node view.
+    $node = node_prepare($node, $teaser);
+
+    // Add a random number of Ha's to simulate a laugh track.
+    $node->guffaw = str_repeat(t('Ha!'), mt_rand(0, 10));
+
+    // Now add the punchline.
+    // (Comment this line out when using node-joke.tpl.php.)
+    $node->content['punchline'] = array(
+      '#value' => theme('joke_punchline', $node),
+      '#weight' => 2,
+      );
+      // */
+  }
+
+  // If $teaser is true, node is being displayed as a teaser,
+  // such as on a node listing page. We omit the punchline in this case.
+  if ($teaser) {
+    // Use Drupal's default node view.
+    $node = node_prepare($node, $teaser);
+  }
+
+  return $node;
+}
+
+/**
+ * Implementation of hook_theme().
+ * We declare joke_punchline so Drupal will look for a function
+ * named theme_joke_punchline().
+ */
+function joke_theme() {
+  return array(
+    'joke_punchline' => array(
+      'arguments' => array('node'),
+    ),
+  );
+}
+
+//* Comment out because we're using node-joke.tpl.php instead.
+function theme_joke_punchline($node) {
+  $output = '<div class="joke-punchline">'.
+    check_plain($node->punchline). '</div><br />';
+  $output .= '<div class="joke-guffaw">'.
+    check_plain($node->guffaw). '</div>';
+  return $output;
+}
+//*/

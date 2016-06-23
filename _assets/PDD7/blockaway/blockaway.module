@@ -1,0 +1,17 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Use this module to learn about jQuery.
+ */
+
+/** 
+ * Implementation of hook_init(). 
+ */
+function blockaway_init() { 
+  drupal_add_js(drupal_get_path('module', 'blockaway') .'/blockaway.js'); 
+} 
+
+// Use the module in the "blockaway page 390" folder for
+// later examples in this chapter.

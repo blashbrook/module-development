@@ -1,0 +1,113 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Example of a multistep form.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function formwizard_menu() {
+  $items['formwizard'] = array(
+    'title' => t('Form Wizard'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('formwizard_multiform'),
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('access content'),
+  );
+  $items['formwizard/thanks'] = array(
+    'title' => t('Thanks!'),
+    'page callback' => 'formwizard_thanks',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access_content'),
+  );
+  
+  return $items;
+}
+
+/**
+ * Form definition. We build the form differently depending on
+ * which step we're on.
+ */
+function formwizard_multiform(&$form_state = NULL) {
+  // Find out which step we are on. If $form_state is not set,
+  // that means we are on step 1.
+  $step = isset($form_state['values']) ? (int) $form_state['storage']['step'] : 1;
+
+  // Store next step.
+  $form_state['storage']['step'] = $step + 1;
+
+  // Customize the fieldset title to indicate the current step to the user.
+  $form['indicator'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Step @number', array('@number' => $step))
+  );
+  
+  // The name of our ingredient form element is unique for
+  // each step, e.g. ingredient_1, ingredient_2...
+  $form['indicator']['ingredient_' . $step] = array(
+    '#type' => 'textfield',
+    '#title' => t('Ingredient'),
+    '#description' => t('Enter ingredient @number of 3.', array('@number' => $step))
+   );
+
+  // The button will say Next until the last step, when it will say Submit.
+  $button_name = t('Submit');
+  if ($step < 3) {
+    $button_name = t('Next');
+  }
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => $button_name
+  );
+
+  switch($step) {
+    case 2:
+      // Save ingredient in storage bin.
+      $form_state['storage']['ingredient_1'] = $form_state['values']['ingredient_1'];
+      break;
+    case 3:
+      // Add ingredient to storage bin.
+      $form_state['storage']['ingredient_2'] = $form_state['values']['ingredient_2'];
+  }
+
+  return $form;
+}
+
+/**
+ * Validate handler for form ID 'formwizard_multiform'.
+ */
+function formwizard_multiform_validate($form, &$form_state) {
+  // Show user which step we are on.
+  drupal_set_message(t('Validation called for step @step',
+    array('@step' => $form_state['storage']['step'] - 1)));
+}
+
+/**
+ * Submit handler for form ID 'formwizard_multiform'.
+ */
+function formwizard_multiform_submit($form, &$form_state) {
+  if ($form_state['storage']['step'] < 4) {
+    return;
+  }
+  
+  drupal_set_message(t('Your three ingredients were %ingredient_1, %ingredient_2,
+    and %ingredient_3.', array(
+      '%ingredient_1' => $form_state['storage']['ingredient_1'],
+      '%ingredient_2' => $form_state['storage']['ingredient_2'],
+      '%ingredient_3' => $form_state['values']['ingredient_3']
+      )
+    )
+  );
+  // Clear storage bin to avoid automatic form rebuild that overrides our redirect.
+  unset($form_state['storage']);
+
+  // Redirect to a thank-you page.
+  $form_state['redirect'] = 'formwizard/thanks';
+}
+
+function formwizard_thanks() {
+  return t('Thanks, and have a nice day.');
+}

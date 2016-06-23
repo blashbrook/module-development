@@ -1,0 +1,47 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Example of XML-RPC.
+ */
+
+/**
+ * Implementation of hook_xmlrpc().
+ * Maps external names of XML-RPC methods to callback functions.
+ */
+function remotehello_xmlrpc() {
+  $methods['remoteHello.hello'] = 'xmls_remotehello_hello';
+  return $methods;
+}
+
+/**
+ * Implementation of hook_xmlrpc().
+ * Maps external names of XML-RPC methods to callback functions.
+ * Verbose syntax, specifying data types of return value and parameters.
+ */
+ 
+    // Comment out the remotehello_xmlrpc() function above and use the
+    // one below instead to test automatic parameter type validation.
+/*    
+function remotehello_xmlrpc() {
+  $methods = array();
+  $methods[] = array(
+    'remoteHello.hello',       // External method name.
+    'xmls_remotehello_hello',  // PHP function to run.
+    array('string', 'string'), // The return value's type,
+                               // then any parameter types.
+    t('Greets XML-RPC clients by name.')  // Description.
+  );
+  return $methods;
+}
+
+/**
+ * Greet a user.
+ */
+function xmls_remotehello_hello($name) {
+  if (!$name) {
+    return xmlrpc_error(1, t('I cannot greet you by name if you do not provide one.'));
+  }
+  return t('Hello, @name!', array('@name' => $name));
+}

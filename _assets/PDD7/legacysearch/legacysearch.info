@@ -1,0 +1,5 @@
+; $Id$
+name = Legacy Search
+description = Example of indexing/searching external content with Drupal.
+package = Pro Drupal Development
+core = 6.x

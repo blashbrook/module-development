@@ -1,0 +1,164 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * A simple +1 voting widget.
+ */
+
+/**
+ * Implementation of hook_perm().
+ */
+function plusone_perm() {
+ return array('rate content');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function plusone_menu() {
+  $items['plusone/vote'] = array(
+    'page callback' => 'plusone_vote',
+    'access arguments' => array('rate content'),
+    'type'  => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Called by jQuery, or by browser if JavaScript is disabled.
+ * Submits the vote request. If called by jQuery, returns JSON.
+ * If called by the browser, returns page with updated vote total.
+ */
+function plusone_vote($nid) {
+  global $user;
+  $nid = (int) $nid;
+
+  // Authors may not vote on their own posts. We check the node table
+  // to see if this user is the author of the post.
+  $is_author = db_result(db_query('SELECT uid FROM {node} WHERE nid = %d AND
+    uid = %d', $nid, $user->uid));
+
+  if ($nid > 0 && !$is_author) {
+    // Get current vote count for this user.
+    $vote_count = plusone_get_vote($nid, $user->uid);
+     if (!$vote_count) {
+      // Delete existing vote count for this user.
+      db_query('DELETE FROM {plusone_votes} WHERE uid = %d AND nid = %d', $user->uid, $nid);
+      db_query('INSERT INTO {plusone_votes} (uid, nid, vote_count) VALUES (%d, %d, %d)', $user->uid, $nid, $vote_count + 1);
+      watchdog('plusone', 'Vote by @user on node @nid.', array('@user' => $user->name, '@nid' => $nid));
+     }
+  }
+  // Get new total to display in the widget.
+  $total_votes = plusone_get_total($nid);
+      
+  // Check to see if jQuery made the call.
+  if (!empty($_POST['js'])) {
+    // This will return results to jQuery's request.
+    drupal_json(array(
+      'total_votes' => $total_votes,
+      'voted' => t('You voted')
+      )
+    );
+    exit();
+  }
+  
+  // It was a non-JavaScript call. Redisplay the entire page
+  // with the updated vote total by redirecting to node/x
+  // (or any URL alias that has been set for node/x).
+  $path = drupal_get_path_alias('node/'. $nid);
+  drupal_goto($path);
+}
+
+/**
+ * Return the number of votes for a given node ID/user ID pair.
+ */
+function plusone_get_vote($nid, $uid) {
+  return (int) db_result(db_query('SELECT vote_count FROM {plusone_votes} WHERE nid = %d AND uid = %d', $nid, $uid));
+}
+
+/**
+ * Return the total vote count for a node.
+ */
+function plusone_get_total($nid) {
+  return (int) db_result(db_query('SELECT SUM(vote_count) FROM {plusone_votes} WHERE nid = %d', $nid));
+}
+
+/**
+ * Create voting widget to display on the webpage.
+ */
+function plusone_widget($nid) {
+  global $user;
+
+  $total  = plusone_get_total($nid);
+  $is_author = db_result(db_query('SELECT uid FROM {node} WHERE nid = %d AND uid = %d', $nid, $user->uid));
+  $voted = plusone_get_vote($nid, $user->uid);
+
+  return theme('plusone_widget', $nid, $total, $is_author, $voted);
+}
+
+/**
+ * Implementation of hook_theme().
+ * Let Drupal know about our theme function.
+ */
+function plusone_theme() {
+  return array(
+    'plusone_widget' => array(
+      'arguments' => array('nid', 'total', 'is_author', 'voted'),
+    ),
+  );
+}
+
+/**
+ * Theme for the voting widget.
+ */
+function theme_plusone_widget($nid, $total, $is_author, $voted) {
+  // Load the JavaScript and CSS files.
+  drupal_add_js(drupal_get_path('module', 'plusone') .'/plusone.js');
+  drupal_add_css(drupal_get_path('module', 'plusone') .'/plusone.css');
+
+  $output = '<div class="plusone-widget">';
+  $output .= '<div class="score">' . $total . '</div>';
+
+  $output .= '<div class="vote">';
+  if ($is_author) {
+    // User is author; not allowed to vote.
+    $output .= t('Votes');
+  }
+  elseif ($voted) {
+    // User already voted; not allowed to vote again.
+    $output .= t('You voted');
+  }
+  else {
+    // User is eligible to vote.
+    $output .= l(t('Vote'), "plusone/vote/$nid", array(
+      'attributes' => array('class' => 'plusone-link')
+      ));
+  }
+  $output .= '</div>'; // Close class "vote".
+  $output .= '</div>'; // Close class "plusone-widget".
+
+  return $output;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function plusone_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+    case 'view':
+      // Show the widget, but only if the full node is being displayed.
+      if (!$teaser) {
+        $node->content['plusone_widget'] = array(
+            '#value' => plusone_widget($node->nid),
+            '#weight' => 100,
+          );
+      }
+      break;
+
+    case 'delete':
+      // Node is being deleted; delete associated vote data.
+      db_query('DELETE FROM {plusone_vote} WHERE nid = %d', $node->nid);
+      break;
+  }
+}

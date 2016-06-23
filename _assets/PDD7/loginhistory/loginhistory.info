@@ -1,0 +1,5 @@
+; $Id$
+name = Login History
+description = Keeps track of user logins.
+package = Pro Drupal Development
+core = 6.x

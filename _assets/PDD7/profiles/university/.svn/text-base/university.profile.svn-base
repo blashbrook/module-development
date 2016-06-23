@@ -1,0 +1,128 @@
+<?php
+// $Id$
+
+/**
+ * Return a description of the profile for the initial installation screen.
+ *
+ * @return
+ *   An array with keys 'name' and 'description' describing this profile.
+ */
+function university_profile_details() {
+  return array(
+    'name' => st('Drupal (Customized for Iowa State University)'),
+    'description' => st('Select this profile to enable settings typical for a departmental website.')
+  );
+}
+
+/**
+ * Return an array of the modules to be enabled when this profile is installed.
+ *
+ * @return
+ *  An array of modules to be enabled.
+ */
+function university_profile_modules() {
+  return array(
+    // Enable required core modules.
+    'block', 'filter', 'help', 'node', 'system', 'user', 'watchdog',
+
+    // Enable optional core modules.
+    'color', 'help', 'taxonomy', 'throttle', 'search', 'statistics',
+
+    // Enable single signon by enabling a contributed module.
+    'pubcookie',
+  );
+}
+
+/**
+ * Perform final installation tasks for this installation profile.
+ */
+function university_profile_final() {
+  // Define a node type, 'page'.
+  $node_type = array(
+    'type' => 'page',
+    'name' => st('Page'),
+    'module' => 'node',
+    'description' => st('A standard web page.'),
+    'custom' => TRUE,
+    'modified' => TRUE,
+    'locked' => FALSE,
+    'has_title' => TRUE,
+    'has_body' => TRUE,
+    'orig_type' => 'page',
+    'is_new' => TRUE,
+  );
+  node_type_save((object) $node_type);
+
+  // Page node types should be published and create new revisions by default.
+  variable_set('node_options_page', array('status', 'revision'));
+
+  // If the administrator enables the comment module, we want
+  // to have comments disabled for pages.
+  variable_set('comment_page', COMMENT_NODE_DISABLED);
+
+  // Define a node type, 'newsitem'.
+  $node_type = array(
+    'type' => 'news',
+    'name' => st('News Item'),
+    'module' => 'node',
+    'description' => st('A news item for the front page.'),
+    'custom' => TRUE,
+    'modified' => TRUE,
+    'locked' => FALSE,
+    'has_title' => TRUE,
+    'has_body' => TRUE,
+    'orig_type' => 'news',
+    'is_new' => TRUE,
+  );
+  node_type_save((object) $node_type);
+
+  // News items should be published and promoted to front page by default.
+  // News items should create new revisions by default.
+  variable_set('node_options_news', array('status', 'revision', 'promote'));
+
+  // If the administrator enables the comment module, we want
+  // to have comments enabled for news items.
+  variable_set('comment_news', COMMENT_NODE_READ_WRITE);
+
+  // Create a taxonomy so news can be classified.
+  $vocabulary = array(
+    'name' => t('News Categories'),
+    'description' => st('Select the appropriate audience for your news item.'),
+    'help' => st('You may select multiple audiences.'),
+    'nodes' => array('news' => st('News Item')),
+    'hierarchy' => 0,
+    'relations' => 0,
+    'tags' => 0,
+    'multiple' => 1,
+    'required' => 0,
+  );
+  taxonomy_save_vocabulary($vocabulary);
+
+  // Define some terms to categorize news items.
+  $terms = array(
+    st('Departmental News'),
+    st('Faculty News'),
+    st('Staff News'),
+    st('Student News'),
+  );
+
+  // Submit the "Add term" form programmatically for each term.
+  foreach ($terms as $name) {
+    drupal_execute('taxonomy_form_term', array('name' => $name), $vid);
+  }
+
+  // Add a role.
+  db_query("INSERT INTO {role} (name) VALUES ('%s')", 'site administrator');
+
+  // Configure the pubcookie module.
+  variable_set('pubcookie_login_dir', 'login');
+  variable_set('pubcookie_id_is_email', 1);
+  // ...other settings go here
+
+  // Report by email that a new Drupal site has been installed.
+  $to = 'administrator@example.com';
+  $from = ini_get('sendmail_from');
+  $subject = st('New Drupal site created!');
+  $body = st('A new Drupal site was created: @site', array('@site' => base_path()));
+  drupal_mail('university-profile', $to, $subject, $body, $from);
+}

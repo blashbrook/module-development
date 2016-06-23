@@ -1,0 +1,4 @@
+; $Id$
+name = Legacy Search
+description = Enables searching of external content within Drupal.
+version = "$Name$"

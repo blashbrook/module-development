@@ -1,0 +1,242 @@
+<?php
+/**
+ * @file
+ * An example field using the Field API.
+ *
+ */
+
+/**
+ * Implements hook_field_info().
+ *
+ * Provides the description of the field.
+ *
+ * Thefirststepistocallhook_field_info(), whichdefinesthebasicattributesofournewfield.We definethefieldascolor_example_rgb() andassignalabel,description,defaultwidget,anddefault formatter to the new field type.
+ */
+function color_example_field_info() {
+  return array(
+    'color_example_rgb' => array(
+      'label' => t('Example Color RGB'),
+      'description' => t('Demonstrates a field composed of an RGB color.'),
+      'default_widget' => 'color_example_3text',
+      'default_formatter' => 'color_example_simple_text',
+    ), );
+}
+
+/**
+ * Implements hook_field_schema().
+ *
+ * For our example, we’ll store a seven-character field that represents the HTML hex color code that we want to use to render the text on the screen—for example, using #FF0000 renders the text in red. In the example here, we create a single column that stores the RGB value entered by the site administrator when he or she assigns the field to a content type.
+ */
+function color_example_field_schema($field) {
+  $columns = array(
+    'rgb' => array('type' => 'varchar', 'length' => 7, 'not null' => FALSE),
+  );
+  $indexes = array(
+    'rgb' => array('rgb'),
+  );
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes,
+  );
+}
+
+/**
+ * Implements hook_field_validate().
+ *
+ * Verifies that the RGB field as combined is valid
+ * (6 hex digits with a # at the beginning).
+ *
+ * The next step is to validate the user’s input by using hook_field_validate(). I’ll tell Drupal to validate that the user entered a value that matches a pattern of a typical HTML color code using preg_match(). I’ll check to see that the first character is a # and the following six characters are either a numeric digit or an alpha character that is between “a” and “f.” If the value entered doesn’t match that pattern, I’ll display an error.
+ */
+function color_example_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  foreach($items as $delta => $item) {
+    if(!empty($item['rgb'])) {
+      if(! preg_match('@^#[0-9a-f]{6}$@', $item['rgb'])) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'color_example_invalid',
+          'message' => t('Color must be in the HTML format #abcdef.'),
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ *
+ * The next function defines what constitutes an empty field of this type. In this case, we use the PHP empty function to return either true or false depending on whether the field is empty.
+ */
+function color_example_field_is_empty($item, $field) {
+  return empty($item['rgb']);
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ *
+ * Field formatters are functions that define how the contents of a field are displayed. The hook_field_formatter_info() function identifies the types of formatters that are used to display the text and background in our example.
+ */
+function color_example_field_formatter_info() {
+  return array(
+    // This formatter just displays the hex value in the color indicated.
+    'color_example_simple_text' => array(
+      'label' => t('Simple text-based formatter'),
+      'field types' => array('color_example_rgb'),
+    ),
+    // This formatter changes the background color of the content region.
+    'color_example_color_background' => array(
+      'label' => t('Change the background of the output text'),
+      'field types' => array('color_example_rgb'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_view().
+ *
+ * The next set of functions defines the widget that will be used to display the field on the node edit form. For the RGB field, I’ll create three different types of widgets that the site administrator can select from.
+*  1. A simple text-only widget where the user enters the “#ffffff”
+*  2. A three–text field widget that gathers the red, green, and blue values separately
+*  3. A farbtastic colorpicker widget that chooses the value graphically
+*  I’ll use the hook_field_widget_info() function to define the three widgets.
+ */
+function color_example_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    // This formatter simply outputs the field as text and with a color.
+    case 'color_example_simple_text':
+      foreach ($items as $delta => $item) {
+        $element[$delta]['#markup'] = '<p style="color: ' . $item['rgb']. '">' . t('The color for this event is @code', array('@code' => $item['rgb'])) . '</p>';
+      } break;
+    // This formatter adds css to the page changing the '.region-content' area's
+    // background color. If there are many fields, the last one will win.
+    case 'color_example_color_background':
+      foreach ($items as $delta => $item) {
+        drupal_add_css('div.region-content { background-color:' . $item['rgb'] .';}', array('type' => 'inline') );
+        $element[$delta]['#markup'] = '<p>' . t('The color for this event has been changed to @code', array('@code' => $item['rgb'])) . '</p>';
+      }
+      break; }
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_form().
+ *
+ * The hook_widget_form() function defines the actual structure of how the widgets will be displayed to the user. Three different forms are provided, for the three widget types.
+ *1. color_example_text provides a text box to enter the HTML color code (e.g., #FFFFFF)
+ *2. color_example_colorpicker – is essentially the same as color_example_text , but color_example_colorpicker adds a JavaScript colorpicker helper.
+ *3. color_example_3text displays three text fields, one each for red, green, and blue. However, the field type defines a single text column, rgb, which needs an HTML color code. Define an element validate handler that converts our r, g, and b fields into a simulated single “rgb” form element.
+ */
+function color_example_field_widget_form(&$form, &$form_state, $field, $instance,
+                                         $langcode, $items, $delta, $element) {
+  $value = isset($items[$delta]['rgb']) ? $items[$delta]['rgb'] : '';
+  $element += array(
+    '#delta' => $delta,
+  );
+  $element['rgb'] = array();
+  switch ($instance['widget']['type']) {
+    case 'color_example_colorpicker':
+      $element['rgb'] += array(
+        '#suffix' => '<div class="field-example-colorpicker"></div>',
+        '#attributes' => array('class' => array('edit-field-example-colorpicker')),
+        '#attached' => array(
+          // Add Farbtastic color picker.
+          'library' => array(
+            array('system', 'farbtastic'),
+          ),
+          // Add javascript to trigger the colorpicker.
+          'js' => array(drupal_get_path('module', 'color_example') . '/color_example.js'),
+        ), );
+    // DELIBERATE fall-through: From here on the color_example_text and
+    // color_example_colorpicker are exactly the same.
+    case 'color_example_text':
+      $element['rgb'] += array(
+        '#title' => t('Event\’s RGB Color'),
+        '#type' => 'textfield',
+        '#default_value' => $value,
+        // Allow a slightly larger size than the field length to allow for some
+        // configurations where all characters won't fit in input field.
+        '#size' => 7,
+        '#maxlength' => 7,
+                );
+      break;
+    case 'color_example_3text':
+      // Convert rgb value into r, g, and b for #default_value.
+      if (isset($items[$delta]['rgb'])) {
+        preg_match_all('@..@', substr($items[$delta]['rgb'], 1), $match);
+      }
+      else {
+        $match = array(array());
+      }
+      // A fieldset to hold the three text fields.
+      $element += array(
+        '#type' => 'fieldset',
+        '#element_validate' => array('color_example_3text_validate'),
+        // The following is set so that the validation function will be able
+        // to access external value information that otherwise would be
+        // unavailable.
+        '#delta' => $delta,
+        '#attached' => array(
+          'css' => array(drupal_get_path('module', 'color_example') . '/color_example.css'),
+        ),
+      );
+      // Create a textfield for saturation values for Red, Green, and Blue.
+      foreach (array('r' => t('Red'), 'g' => t('Green'), 'b' => t('Blue')) as $key => $title) {
+        $element[$key] = array(
+          '#type' => 'textfield',
+          '#title' => $title,
+          '#size' => 2,
+          '#default_value' => array_shift($match[0]),
+          '#attributes' => array('class' => array('rgb-entry')),
+          // '#description' => t('The 2-digit hexadecimal representation of the@color saturation, like "a1" or "ff"'
+          array('@color' => $title)
+          );
+      }
+      break;
+    }
+   return $element;
+}
+
+/**
+ * Validate the individual fields and then convert them into a single HTML RGB
+ *
+ * The next function defines the validations that will be performed against the data entered by the user.
+ * value as text.
+
+ */
+function color_example_3text_validate($element, &$form_state) {
+  $delta = $element['#delta'];
+  $field = $form_state['field'][$element['#field_name']][$element['#language']]['field'];
+  $field_name = $field['field_name'];
+  if (isset($form_state['values'][$field_name][$element['#language']][$delta])) {
+    $values = $form_state['values'][$field_name][$element['#language']][$delta];
+    foreach (array('r', 'g', 'b') as $colorfield) {
+      $val = hexdec($values[$colorfield]);
+      // If they left any empty, we'll set the value empty and quit.
+      if (strlen($values[$colorfield]) == 0) {
+        form_set_value($element, array('rgb' => NULL), $form_state);
+        return;
+      }
+      // If they gave us anything that's not hex, reject it.
+      if ( (strlen($values[$colorfield]) != 2) || $val < 0 || $val > 255) {
+        form_error($element[$colorfield], t("Saturation value must be a 2-digit hexadecimal value between 00 and ff."));
+      }
+    }
+    $value = sprintf('#%02s%02s%02s', $values['r'], $values['g'], $values['b']);
+    form_set_value($element, array('rgb' => $value), $form_state);
+  }
+}
+
+
+/**
+ * Implements hook_field_error().
+ * 
+ * And lastly I’ll use hook_field_error() to display an error message when the user enters something incorrectly.
+ */
+function color_example_field_widget_error($element, $error, $form, &$form_state) {
+  switch ($error['error']) {
+    case 'color_example_invalid':
+      form_error($element, $error['message']);
+     break;
+  } 
+}

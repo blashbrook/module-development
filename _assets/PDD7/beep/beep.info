@@ -1,0 +1,5 @@
+; $Id$
+name = Beep
+description = Simulates a system beep.
+package = Pro Drupal Development
+core = 6.x

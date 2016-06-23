@@ -1,0 +1,5 @@
+; $Id$
+name = Form Wizard
+description = Example of a multistep form.
+package = Pro Drupal Development
+core = 6.x

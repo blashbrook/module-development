@@ -1,0 +1,5 @@
+; $Id$
+name = Authenticate Daves
+description = External authentication for all Daves.
+package = Pro Drupal Development
+core = 6.x

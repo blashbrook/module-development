@@ -1,0 +1,5 @@
+; $Id$
+name = Book Booster
+description = Tweaks search relevancy of book nodes.
+package = Pro Drupal Development
+core = 6.x

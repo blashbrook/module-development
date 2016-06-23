@@ -1,0 +1,5 @@
+; $Id$
+name = Import Users
+description = Imports users from a database using Batch API.
+package = Pro Drupal Development
+core = 6.x

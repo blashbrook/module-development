@@ -1,0 +1,49 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_taxonomy().
+ *
+ * Sends email when changes to vocabularies or terms occur.
+ */
+function taxonomymonitor_taxonomy($op, $type, $array = array()) {
+  $to = 'me@example.com';
+  $name = check_plain($array['name']);
+
+  // $type is either 'vocabulary' or 'term'.
+  switch ($type) {
+    case 'vocabulary':
+      switch($op) {
+        case 'insert':
+          $subject = t('Vocabulary @voc was added.', array('@voc' => $name));
+          break;
+        case 'update':
+          $subject = t('Vocabulary @voc was changed.', array('@voc' => $name));
+          break;
+        case 'delete':
+          $subject = t('Vocabulary @voc was deleted.', array('@voc' => $name));
+          break;
+      }
+      break;
+    case 'term':
+      switch($op) {
+        case 'insert':
+          $subject = t('Term @term was added.', array('@term' => $name));
+          break;
+        case 'update':
+          $subject = t('Term @term was changed.', array('@term' => $name));
+          break;
+        case 'delete':
+          $subject = t('Term @term was deleted.', array('@term' => $name));
+          break;
+      }
+  }
+
+  // Dump the vocabulary or term information out and send it along.
+  $body = print_r($array, TRUE);
+
+  watchdog('taxonomymonitor', 'Sending email for @type @op', array('@type' => $type, '@op' => $op));
+
+  // Send the email.
+  drupal_mail('taxonomymonitor-notify', $to, $subject, $body);
+}

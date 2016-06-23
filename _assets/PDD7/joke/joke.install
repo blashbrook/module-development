@@ -1,0 +1,55 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function joke_install() {
+  drupal_install_schema('joke');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function joke_uninstall() {
+  drupal_uninstall_schema('joke');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function joke_schema() {
+  $schema['joke'] = array(
+    'description' => t("Stores punchlines for nodes of type 'joke'."),
+    'fields' => array(
+       'nid' => array(
+         'type' => 'int', 
+         'unsigned' => TRUE, 
+         'not null' => TRUE, 
+         'default' => 0,
+         'description' => t("The joke's {node}.nid."),
+         ),
+       'vid' => array(
+         'type' => 'int', 
+         'unsigned' => TRUE, 
+         'not null' => TRUE, 
+         'default' => 0,
+         'description' => t("The joke's {node_revisions}.vid."),
+         ),
+       'punchline' => array(
+         'type' => 'text', 
+         'not null' => TRUE,
+         'description' => t('Text of the punchline.'),
+         ),
+       ),
+    'primary key' => array('nid', 'vid'),
+    'unique keys' => array(
+       'vid' => array('vid')
+    ),
+    'indexes' => array(
+       'nid' => array('nid')
+    ),
+  );
+
+  return $schema;
+}

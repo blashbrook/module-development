@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * Implementation of hook_install().
+ */
+function bunny_install() {
+  // Create tables.
+  drupal_install_schema('bunny');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function bunny_uninstall() {
+  drupal_uninstall_schema('bunny');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function bunny_schema() {
+  $schema['bunnies'] = array(
+    'description' => t('Stores information about giant rabbits.'),
+    'fields' => array(
+      'bid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => t("Primary key: A unique ID for each bunny."),
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => t("Each bunny gets a name."),
+      ),
+      'tons' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t('The weight of the bunny to the nearest ton.'),
+      ),
+      'myvarchar' => array(
+        'type' => 'blob',
+        'not null' => TRUE,
+        'size' => 'big',
+      ),
+    ),
+    //'primary key' => array('bid'),
+    'indexes' => array(
+      'tons' => array('bid','tons'),
+    ),
+  );
+
+  return $schema;
+}
+

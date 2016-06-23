@@ -1,0 +1,5 @@
+; $Id$
+name = Taxonomy Monitor
+description = Sends email to notify of changes to taxonomy vocabularies.
+dependencies = taxonomy
+version = $Name$

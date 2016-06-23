@@ -1,0 +1,74 @@
+<?php
+/**
+ * @file
+ * Use this module to learn about Drupal's menu system,
+ * specifically how local tasks work.
+ *
+ */
+/**
+ * Implements hook_menu().
+ */
+function milkshake_menu() {
+  $items['milkshake'] = array(
+  'title' => 'Milkshake flavors',
+  'access callback' => TRUE,
+  'page callback' => 'milkshake_overview',
+  'type' => MENU_NORMAL_ITEM,
+);
+$items['milkshake/list'] = array(
+  'title' => 'List flavors',
+  'access callback' => TRUE,
+  'type' => MENU_DEFAULT_LOCAL_TASK,
+  'weight' => 0,
+);
+  //For Me:  By Removing 'access callback' => TRUE,
+  // Drupal default to 'user access' and calls permissions
+  // from Milkshake permissions set my milkshake_permissions()
+  // and set in the permissions settings page.
+$items['milkshake/add'] = array(
+  'title' => 'Add flavor',
+  'page callback' => 'milkshake_add',
+  'type' => MENU_LOCAL_TASK,
+  'weight' => 1,
+);
+$items['milkshake/list/fruity'] = array(
+  'title' => 'Fruity flavors',
+  'access callback' => TRUE,
+  'page callback' => 'milkshake_list',
+  'page callback' => array(2), // Pass 'fruity'.
+  'type' => MENU_LOCAL_TASK,
+);
+$items['milkshake/list/candy'] = array(
+  'title' => 'Candy flavors',
+  'access callback' => TRUE,
+  'page callback' => 'milkshake_list',
+  'page callback' => array(2), // Pass 'candy'.
+  'type' => MENU_LOCAL_TASK,
+);
+return $items;
+}
+function milkshake_overview() {
+  $output = t('The following flavors are available...');
+  // ... more code here
+  return $output;
+}
+function milkshake_add() {
+  return t('A handy form to add flavors might go here...');
+}
+function milkshake_list($type) {
+  return t('List @type flavors', array('@type' => $type));
+}
+
+/**
+ * Implements hook_permission().
+ * For Me:  This creates a permissions setting
+ * @TODO: Can permission be set by this function instead of the permissions setting page?
+ */
+function milkshake_permission() {
+  return array(
+    'milkshake' => array(
+      'title' => t('Milkshake flavors'),
+      'description' => t('Allow users to edit milkshake flavors'),
+    ),
+  );
+}

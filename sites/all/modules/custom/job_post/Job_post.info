@@ -1,0 +1,7 @@
+name = Job Post
+description = "Adds a field dynamically.
+fashion."
+package = Pro Drupal Development
+core = 7.x
+files[] = job_post.module
+php = 5.2

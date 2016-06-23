@@ -1,0 +1,98 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Enables searching of non-Drupal content.
+ */
+
+/**
+ * Implementation of hook_update_index().
+ */
+function legacysearch_update_index() {
+  // We define these variables as global so our shutdown function can
+  // access them.
+  global $last_change, $last_id;
+
+  // If PHP times out while indexing, run a function to save
+  // information about how far we got so we can continue at next cron run.
+  register_shutdown_function('legacysearch_update_shutdown');
+
+  $last_id = variable_get('legacysearch_cron_last_id', 0);
+  $last_change = variable_get('legacysearch_cron_last_change', 0);
+
+  // Switch database connection to legacy database.
+  db_set_active('legacy');
+  $result = db_query("SELECT id, title, note, last_modified
+                      FROM {technote}
+                      WHERE (id > %d) OR (last_modified > %d)
+                      ORDER BY last_modified ASC", $last_id, $last_change);
+  // Switch database connection back to Drupal database.
+  db_set_active('default');
+
+  // Feed the external information to the search indexer.
+  while ($data = db_fetch_object($result)) {
+    $last_change = $data->last_modified;
+    $last_id = $data->id;
+
+    $text = '<h1>' . check_plain($data->title) . '</h1>' . $data->note;
+
+    search_index($data->id, 'technote', $text);
+  }
+}
+
+/**
+ * Shutdown function to make sure we remember the last element processed.
+ */
+function legacysearch_update_shutdown() {
+  global $last_change, $last_id;
+
+  if ($last_change && $last_id) {
+    variable_set('legacysearch_cron_last', $last_change);
+    variable_set('legacysearch_cron_last_id', $last_id);
+  }
+}
+
+/**
+ * Implementation of hook_search().
+ */
+function legacysearch_search($op = 'search', $keys = NULL) {
+  switch ($op) {
+    case 'name':
+      return t('Tech Notes'); // Used on search tab.
+
+    case 'reset':
+      variable_del('legacysearch_cron_last');
+      variable_del('legacysearch_cron_last_id');
+      return;
+
+    case 'search':
+      // Search the index for the keywords that were entered.
+      $hits = do_search($keys, 'technote');
+
+      $results = array();
+
+      // Prepend URL of legacy system to each result. Assume a legacy URL
+      // for a given tech note is http://technotes.example.com/note.pl?3
+      $legacy_url = 'http://technotes.example.com/';
+
+      // We now have the IDs of the results. Pull each result
+      // from the legacy database.
+      foreach ($hits as $item) {
+        db_set_active('legacy');
+        $note = db_fetch_object(db_query("SELECT * FROM {technote} WHERE
+          id = %d", $item->sid));
+        db_set_active('default');
+
+        $results[] = array(
+          'link' => url($legacy_url . 'note.pl', array('query' => $item->sid,
+            'absolute' => TRUE)),
+          'type' => t('Note'),
+          'title' => $note->title,
+          'date' => $note->last_modified,
+          'score' => $item->score,
+          'snippet' => search_excerpt($keys, $note->note));
+      }
+      return $results;
+  }
+}

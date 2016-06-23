@@ -1,0 +1,94 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Search interface for URL aliases.
+ */
+
+/**
+ * Implementation of hook_search().
+ */
+function pathfinder_search($op = 'search', $keys = NULL) {
+  switch ($op) {
+    case 'name':
+      if (user_access('administer url aliases')) {
+        return t('URL aliases');
+      }
+      break;
+
+    case 'search':
+      if (user_access('administer url aliases')) {
+        $found = array();
+        // Replace wildcards with MySQL/PostgreSQL wildcards.
+        $keys = preg_replace('!\*+!', '%', $keys);
+        $sql = "SELECT * FROM {url_alias} WHERE LOWER(dst) LIKE LOWER('%%%s%%')";
+        $result = pager_query($sql, 50, 0, NULL, $keys);
+        while ($path = db_fetch_object($result)) {
+          $found[] = array('title' => $path->dst,
+            'link' => url("admin/build/path/edit/$path->pid"));
+        }
+
+        return $found;
+      }
+  }
+}
+
+// Comment out code above and uncomment code below for example 
+// of using the search results page.
+
+/**
+ * Implementation of hook_search().
+ */
+
+/*
+function pathfinder_search($op = 'search', $keys = NULL) {
+  switch ($op) {
+    case 'name':
+      if (user_access('administer url aliases')) {
+        return t('URL aliases');
+      }
+      break;
+
+    case 'search':
+      if (user_access('administer url aliases')) {
+        $header = array(
+          array('data' => t('Alias'), 'field' => 'dst'),
+          t('Operations'),
+        );
+
+        // Return to this page after an 'edit' operation.
+        $destination = drupal_get_destination();
+        // Replace wildcards with MySQL/PostgreSQL wildcards.
+        $keys = preg_replace('!\*+!', '%', $keys);
+        $sql = "SELECT * FROM {url_alias} WHERE LOWER(dst) LIKE LOWER('%%%s%%')" .
+          tablesort_sql($header);
+        $result = pager_query($sql, 50, 0, NULL, $keys);
+        while ($path = db_fetch_object($result)) {
+          $rows[] = array(l($path->dst, $path->dst), l(t('edit'),
+            "admin/build/path/edit/$path->pid", array('query' => $destination)));
+        }
+        if (!$rows) {
+          $rows[] = array(array('data' => t('No URL aliases found.'),
+            'colspan' => '2'));
+        }
+
+        return $rows;
+     }
+  }
+}
+
+/**
+ * Implementation of hook_search_page().
+ */
+ 
+/*
+function pathfinder_search_page($rows) {
+  $header = array(
+     array('data' => t('Alias'), 'field' => 'dst'), ('Operations'));
+   $output = theme('table', $header, $rows);
+   $output .= theme('pager', NULL, 50, 0);
+   return $output;
+}
+
+*/

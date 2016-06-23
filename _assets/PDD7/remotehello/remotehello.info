@@ -1,0 +1,5 @@
+; $Id$
+name = Remote Hello
+description = Greets XML-RPC clients.
+package = Pro Drupal Development
+core = 6.x

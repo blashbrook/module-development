@@ -1,0 +1,144 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provide a simulated beep.
+ */
+
+function beep_beep() {
+  watchdog('beep', 'Beep!');
+}
+
+/**
+ * Implementation of hook_user().
+ */
+// ca. page 41 instructs you to delete (or comment out) this function.
+function beep_user($op, &$edit, &$account, $category = NULL) {
+  if ($op == 'login') {
+    beep_beep();
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+// ca. page 41 instructs you to delete (or comment out) this function.
+function beep_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($op == 'insert') {
+    beep_beep();
+  }
+}
+
+
+/**
+ * Implementation of hook_action_info().
+ */
+function beep_action_info() {
+  $info['beep_beep_action'] = array(
+    'type' => 'system',
+    'description' => t('Beep annoyingly'),
+    'configurable' => FALSE,
+    'hooks' => array(
+      //'any' => TRUE,
+      'nodeapi' => array('view', 'insert', 'update', 'delete'),
+      'comment' => array('view', 'insert', 'update', 'delete'),
+      'user' => array('view', 'insert', 'update', 'delete'),
+      'taxonomy' => array('view', 'insert', 'update', 'delete'),
+    ),
+  );
+  $info['beep_multiple_beep_action'] = array(
+    'type' => 'system',
+    'description' => t('Beep multiple times'),
+    'configurable' => TRUE,
+    'hooks' => array(
+      'any' => TRUE,
+    )
+  );
+
+  return $info;
+}
+
+/**
+ * Simulate a beep. A Drupal action.
+ */
+function beep_beep_action() {
+  beep_beep();
+}
+
+/**
+ * Implementation of hook_drupal_alter(). Called by Drupal after 
+ * hook_action_info() so modules may modify the action_info array.
+ *
+ * @param array $info
+ */
+function beep_action_info_alter(&$info) {
+  // Make the "Block current user" action available to the
+  // comment insert trigger. If another module has modified the
+  // array already, we just make sure the 'insert' operation is present.
+  // Otherwise, we assign the 'insert' operation.
+  if (isset($info['user_block_user_action']['hooks']['comment'])) {
+    array_merge($info['user_block_user_action']['hooks']['comment'], 
+      array('insert'));
+  }
+  else {
+    $info['user_block_user_action']['hooks']['comment'] = array('insert');
+  }
+}
+
+/** 
+ * Form for configurable Drupal action to beep multiple times. 
+ */ 
+function beep_multiple_beep_action_form($context) {
+  $form['beeps'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of beeps'),
+    '#description' => t('Enter the number of times to beep when this action
+executes.'), 
+    '#default_value' => isset($context['beeps']) ? $context['beeps'] : '1',
+    '#required' => TRUE,
+  );
+  return $form;
+}
+
+/**
+ * Validate the multiple beep configuration form.
+ *
+ * @see beep_multiple_beep_action_form()
+ */
+function beep_multiple_beep_action_validate($form, $form_state) {
+  $beeps = $form_state['values']['beeps'];
+  if (!is_numeric($beeps)) {
+    form_set_error('beeps', t('Please enter a numeric value.'));
+  }
+  elseif ((int)$beeps > 10) {
+    form_set_error('beeps', t('That would be too annoying. Please choose fewer
+than 10 beeps.')); 
+  }
+}
+
+/**
+ * Submit handler for multiple beep configuration form.
+ *
+ * @see beep_multiple_beep_action_form()
+ * @return
+ *   Array of keys and values that will be passed to the action in $context.
+ */
+function beep_multiple_beep_action_submit($form, $form_state) {
+  return array(
+    'beeps' => (int)$form_state['values']['beeps']
+  );
+}
+
+/** 
+ * Configurable action. Beeps a specified number of times. 
+ */ 
+function beep_multiple_beep_action($object, $context) {
+  // Note correction. $i should begin at 0, not at 1 for
+  // the number of beeps to be correct.
+  for ($i = 0; $i<$context['beeps']; $i++) { 
+    beep_beep(); 
+  } 
+} 
+
+

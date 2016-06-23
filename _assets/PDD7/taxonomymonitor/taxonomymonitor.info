@@ -1,0 +1,6 @@
+; $Id$
+name = Taxonomy Monitor
+description = Sends email to notify of changes to taxonomy vocabularies.
+package = Pro Drupal Development
+dependencies[] = taxonomy
+core = 6.x
