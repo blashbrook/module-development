@@ -1,0 +1,54 @@
+<?php
+// $id$
+
+/**
+ * @file
+ * Support for dubious legal agreement during user registration.
+ */
+
+/**
+ * Implementation of hook_user().
+ */
+function legalagree_user($op, &$edit, &$user, $category = NULL) {
+  switch($op) {
+    // User is registering.
+    case 'register':
+      // Add a fieldset containing radio buttons to the
+      // user registration form.
+      $fields['legal_agreement'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Legal Agreement')
+      );
+      $fields['legal_agreement']['decision'] = array(
+        '#type' => 'radios',
+        '#description' => t('By registering at %site-name, you agree that
+at any time, we (or our surly, brutish henchmen) may enter your place of
+residence and smash your belongings with a ball-peen hammer.',
+array('%site-name' => variable_get('site_name', 'drupal'))),
+        '#default_value' => 0,
+        '#options' => array(t('I disagree'), t('I agree'))
+      );
+      return $fields;
+
+    // Field values for registration are being checked.
+    // (also called when user edits his/her 'my account' page, but
+    // $edit['decision'] is not set in that case).
+    case 'validate':
+      // Make sure the user selected radio button 1 ('I agree').
+      // the validate op is reused when a user updates information on
+      // the 'my account' page, so we use isset to test whether we are
+      // on the registration page where the decision field is present.
+      if (isset($edit['decision']) && $edit['decision'] != '1') {
+        form_set_error('decision', t('You must agree to the Legal Agreement
+          before registration can be completed.'));
+      }
+      break;
+
+    // New user has just been inserted into the database.
+    case 'insert':
+      // Record information for future lawsuit.
+      watchdog('user', t('User %user agreed to legal terms',
+        array('%user' => $user->name)));
+      break;
+  }
+}

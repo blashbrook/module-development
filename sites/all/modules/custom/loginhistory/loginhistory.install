@@ -1,0 +1,44 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function loginhistory_install() {
+  // Create tables.
+  drupal_install_schema('loginhistory');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function loginhistory_uninstall() {
+  drupal_uninstall_schema('loginhistory');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function loginhistory_schema() {
+  $schema['login_history'] = array(
+    'description' => t('Stores information about user logins.'),
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t('Primary key: the {user}.uid of the user logging in.'),
+      ),
+      'login' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t('Unix timestamp denoting time of login.'),
+      ),
+    ),
+    'index' => array('uid'),
+  );
+
+  return $schema;
+}
+

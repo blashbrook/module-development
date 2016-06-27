@@ -1,0 +1,39 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Keeps track of user logins.
+*/
+
+/**
+ * Implementation of hook_user().
+ */
+function loginhistory_user($op, &$edit, &$account, $category = NULL) {
+  switch($op) {
+    // Successful login.
+    case 'login':
+      // Record timestamp in database.
+      db_query("INSERT INTO {login_history} (uid, login) VALUES (%d, %d)", 
+        $account->uid, $account->login);
+      break;
+
+    // $user object has been created and is given to us as $account parameter.
+    case 'load':
+      // Add the number of times user has logged in.
+      $account->loginhistory_count = db_result(db_query("SELECT COUNT(login) AS 
+        count FROM {login_history} WHERE uid = %d", $account->uid));
+      break;
+
+    // 'My account' page is being created.
+    case 'view':
+      // Add a field displaying number of logins.
+      $account->content['summary']['login_history'] = array(
+        '#type' => 'user_profile_item',
+        '#title' => t('Number of Logins'),
+        '#value' => $account->loginhistory_count,
+        '#attributes' => array('class' => 'login-history'),
+        '#weight' => 10,
+      );
+  }
+}
