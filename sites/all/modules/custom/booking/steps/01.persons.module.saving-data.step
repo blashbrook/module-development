@@ -11,7 +11,7 @@
  * Implements hook_form_alter().
  */
 function persons_form_alter(&$form, &$form_submit, $form_id) {
-
+  
   // Add checkbox to allow users to select whether to store search history.
   if (isset($form['#user_category']) && $form['#user_category'] == 'account') { // Added isset after recording.
     $account = $form['#user'];

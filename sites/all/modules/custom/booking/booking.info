@@ -1,0 +1,6 @@
+name = Booking: User API examples
+description = Example module to demonstrate the User API.
+package = Build a Module
+core = 7.x
+files[] = booking.module
+scripts[] = booking.js

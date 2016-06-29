@@ -1,0 +1,74 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Examples of using the User API.
+ */
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function booking_form_alter(&$form, &$form_submit, $form_id) {
+
+  // Add checkbox to allow users to select whether to store search history.
+  if (isset($form['#user_category']) && $form['#user_category'] == 'account') { // Added isset after recording.
+    $account = $form['#user'];
+    $form['library'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Library'),
+      '#weight' => 4,
+    );
+    $form['library']['library_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Library'),
+      '#description' => t('My Library'),
+      '#default_value' => isset($account->data['library_name']) ? $account->data['library_name'] : '',
+    );
+  }
+
+  // Add a submission function to store search history.
+  //if ($form_id == 'search_block_form') {
+   $form['#submit'][] = 'booking_save_search_submit';
+  //}
+}
+
+/**
+ * A registered submission function for the search form.
+ */
+function booking_save_search_submit($form, &$form_submit) {
+  global $user;
+
+  // Make sure we're not editing the $user variable directly.
+  $account = $user;
+
+  // If the user hasn't chosen to store history, return.
+  if (!isset($account->data['library_name']) || $account->data['library_name'] != '') {
+    return;
+  }
+
+  // Store the search history.
+  $library = isset($account->data['library']) ? $account->data['library'] : array();
+  $library[] = $form_submit['values']['library_name'];
+  $edit['data']['library'] = $library;
+  user_save($account, $edit);
+  return;
+}
+
+
+/**
+ * Implements hook_user_presave().
+ *
+ * Saves user setting to store search history.
+ *//*
+function booking_user_presave(&$edit, $account, $category) {
+
+  // Save option to store search history.
+  if (isset($edit['store_search_history'])) {
+    $edit['data']['store_search_history'] = $edit['store_search_history'];
+  }
+
+  return;
+}
+*/
