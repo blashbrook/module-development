@@ -16,23 +16,24 @@ function booking_form_alter(&$form, &$form_submit, $form_id) {
   if (isset($form['#user_category']) && $form['#user_category'] == 'account') { // Added isset after recording.
     $account = $form['#user'];
     $form['library'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Library'),
-      '#weight' => 4,
+        '#type' => 'fieldset',
+        '#title' => t('Search history'),
+        '#weight' => 4,
     );
-    $form['library']['library_name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Library'),
-      '#description' => t('My Library'),
-      '#default_value' => isset($account->data['library_name']) ? $account->data['library_name'] : '',
+    $form['library']['assigned_library'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Assigned Library'),
+        '#description' => t('Would you like to store search history and display a list on your user page?'),
+        '#default_value' => isset($account->data['assigned_library']) ? $account->data['assigned_library'] : '',
     );
   }
 
   // Add a submission function to store search history.
-  //if ($form_id == 'search_block_form') {
-   $form['#submit'][] = 'booking_save_search_submit';
-  //}
+  if ($form_id == 'search_block_form') {
+    $form['#submit'][] = 'booking_save_search_submit';
+  }
 }
+
 
 /**
  * A registered submission function for the search form.
@@ -43,14 +44,15 @@ function booking_save_search_submit($form, &$form_submit) {
   // Make sure we're not editing the $user variable directly.
   $account = $user;
 
+
   // If the user hasn't chosen to store history, return.
-  if (!isset($account->data['library_name']) || $account->data['library_name'] != '') {
+  if (!isset($account->data['assigned_library']) || $account->data['assigned_library'] != 1) {
     return;
   }
 
   // Store the search history.
   $library = isset($account->data['library']) ? $account->data['library'] : array();
-  $library[] = $form_submit['values']['library_name'];
+  $library[] = $form_submit['values']['search_block_form'];
   $edit['data']['library'] = $library;
   user_save($account, $edit);
   return;
@@ -61,14 +63,17 @@ function booking_save_search_submit($form, &$form_submit) {
  * Implements hook_user_presave().
  *
  * Saves user setting to store search history.
- *//*
+ */
 function booking_user_presave(&$edit, $account, $category) {
 
   // Save option to store search history.
-  if (isset($edit['store_search_history'])) {
-    $edit['data']['store_search_history'] = $edit['store_search_history'];
+  if (isset($edit['assigned_library'])) {
+    $edit['data']['assigned_library'] = $edit['assigned_library'];
   }
 
   return;
 }
-*/
+global $user;
+$account = $user;
+drupal_set_message($account->data['assigned_library']);
+
