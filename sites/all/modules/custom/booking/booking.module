@@ -9,8 +9,12 @@
 
 /**
  * Implements hook_form_alter().
+ *
+ * @TODO: Add a permissions setting for controlling access to this field.
+ * @TODO: Convert field type to prepopulated select list.
  */
 function booking_form_alter(&$form, &$form_submit, $form_id) {
+    global $user;
 
   // Add checkbox to allow users to select whether to store search history.
   if (isset($form['#user_category']) && $form['#user_category'] == 'account') { // Added isset after recording.
@@ -25,12 +29,8 @@ function booking_form_alter(&$form, &$form_submit, $form_id) {
         '#title' => t('Assigned Library'),
         '#description' => t('Would you like to store search history and display a list on your user page?'),
         '#default_value' => isset($account->data['assigned_library']) ? $account->data['assigned_library'] : '',
+        '#disabled' => $user->uid == '1' ? FALSE : TRUE, //Using temporary permissions controller.
     );
-  }
-
-  // Add a submission function to store search history.
-  if ($form_id == 'search_block_form') {
-    $form['#submit'][] = 'booking_save_search_submit';
   }
 }
 
@@ -52,7 +52,6 @@ function booking_save_search_submit($form, &$form_submit) {
 
   // Store the search history.
   $library = isset($account->data['library']) ? $account->data['library'] : array();
-  $library[] = $form_submit['values']['search_block_form'];
   $edit['data']['library'] = $library;
   user_save($account, $edit);
   return;
