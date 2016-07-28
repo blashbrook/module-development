@@ -89,7 +89,7 @@ CREATE TABLE `block` (
   PRIMARY KEY (`bid`),
   UNIQUE KEY `tmd` (`theme`,`module`,`delta`),
   KEY `list` (`theme`,`status`,`region`,`weight`,`module`)
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8 COMMENT='Stores block settings, such as region and visibility...';
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8 COMMENT='Stores block settings, such as region and visibility...';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -316,6 +316,25 @@ CREATE TABLE `cache_image` (
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Cache table used to store information about image...';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `cache_location`
+--
+
+DROP TABLE IF EXISTS `cache_location`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `cache_location` (
+  `cid` varchar(255) NOT NULL DEFAULT '' COMMENT 'Primary Key: Unique cache ID.',
+  `data` longblob COMMENT 'A collection of data to cache.',
+  `expire` int(11) NOT NULL DEFAULT '0' COMMENT 'A Unix timestamp indicating when the cache entry should expire, or 0 for never.',
+  `created` int(11) NOT NULL DEFAULT '0' COMMENT 'A Unix timestamp indicating when the cache entry was created.',
+  `headers` text COMMENT 'Any custom HTTP headers to be added to cached data.',
+  `serialized` smallint(6) NOT NULL DEFAULT '0' COMMENT 'A flag to indicate whether content is serialized (1) or not (0).',
+  PRIMARY KEY (`cid`),
+  KEY `expire` (`expire`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Generic cache table for caching things not separated out...';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -938,7 +957,7 @@ CREATE TABLE `file_managed` (
   KEY `uid` (`uid`),
   KEY `status` (`status`),
   KEY `timestamp` (`timestamp`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores information for uploaded files.';
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='Stores information for uploaded files.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1070,6 +1089,65 @@ CREATE TABLE `image_styles` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `location`
+--
+
+DROP TABLE IF EXISTS `location`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `location` (
+  `lid` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary Key: Unique location ID.',
+  `name` varchar(255) NOT NULL DEFAULT '' COMMENT 'Place Name.',
+  `street` varchar(255) NOT NULL DEFAULT '' COMMENT 'Street address, line 1.',
+  `additional` varchar(255) NOT NULL DEFAULT '' COMMENT 'Street address, line 2.',
+  `city` varchar(255) NOT NULL DEFAULT '' COMMENT 'City.',
+  `province` varchar(16) NOT NULL DEFAULT '' COMMENT 'State / Province code.',
+  `postal_code` varchar(16) NOT NULL DEFAULT '' COMMENT 'Postal / ZIP code.',
+  `country` char(2) NOT NULL DEFAULT '' COMMENT 'Two letter ISO country code.',
+  `latitude` decimal(10,6) NOT NULL DEFAULT '0.000000' COMMENT 'Location latitude (decimal degrees).',
+  `longitude` decimal(10,6) NOT NULL DEFAULT '0.000000' COMMENT 'Location longitude (decimal degrees).',
+  `source` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Source of the latitude and longitude data (Geocoder, user entered, invalid, etc.)',
+  `is_primary` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Is this the primary location of an object? (unused, civicrm legacy field?).',
+  PRIMARY KEY (`lid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Locational data managed by location.module.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `location_country`
+--
+
+DROP TABLE IF EXISTS `location_country`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `location_country` (
+  `code` char(2) NOT NULL COMMENT 'Primary Key: Two letter ISO Country Code',
+  `name` varchar(255) NOT NULL DEFAULT '' COMMENT 'Full Country Name ',
+  PRIMARY KEY (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Country data managed by location.module.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `location_instance`
+--
+
+DROP TABLE IF EXISTS `location_instance`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `location_instance` (
+  `nid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Reference to node.nid.',
+  `vid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Reference to node_revision.vid.',
+  `uid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Reference to users.uid.',
+  `genid` varchar(255) NOT NULL DEFAULT '' COMMENT 'Generic reference key.',
+  `lid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Reference to location.lid.',
+  KEY `nid` (`nid`),
+  KEY `vid` (`vid`),
+  KEY `uid` (`uid`),
+  KEY `genid` (`genid`),
+  KEY `lid` (`lid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='N:M join table to join locations to other tables.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `login_history`
 --
 
@@ -1165,7 +1243,7 @@ CREATE TABLE `menu_links` (
   KEY `menu_plid_expand_child` (`menu_name`,`plid`,`expanded`,`has_children`),
   KEY `menu_parents` (`menu_name`,`p1`,`p2`,`p3`,`p4`,`p5`,`p6`,`p7`,`p8`,`p9`),
   KEY `router_path` (`router_path`(128))
-) ENGINE=InnoDB AUTO_INCREMENT=469 DEFAULT CHARSET=utf8 COMMENT='Contains the individual links within a menu.';
+) ENGINE=InnoDB AUTO_INCREMENT=479 DEFAULT CHARSET=utf8 COMMENT='Contains the individual links within a menu.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1347,7 +1425,7 @@ CREATE TABLE `queue` (
   PRIMARY KEY (`item_id`),
   KEY `name_created` (`name`,`created`),
   KEY `expire` (`expire`)
-) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8 COMMENT='Stores items in queues.';
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8 COMMENT='Stores items in queues.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1775,7 +1853,31 @@ CREATE TABLE `watchdog` (
   KEY `type` (`type`),
   KEY `uid` (`uid`),
   KEY `severity` (`severity`)
-) ENGINE=InnoDB AUTO_INCREMENT=617 DEFAULT CHARSET=utf8 COMMENT='Table that contains logs of all system events.';
+) ENGINE=InnoDB AUTO_INCREMENT=632 DEFAULT CHARSET=utf8 COMMENT='Table that contains logs of all system events.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `zipcodes`
+--
+
+DROP TABLE IF EXISTS `zipcodes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `zipcodes` (
+  `zip` varchar(16) NOT NULL DEFAULT '0' COMMENT 'Postal / ZIP code.',
+  `city` varchar(30) NOT NULL DEFAULT '' COMMENT 'City.',
+  `state` varchar(30) NOT NULL DEFAULT '' COMMENT 'Province / State.',
+  `latitude` decimal(10,6) NOT NULL DEFAULT '0.000000' COMMENT 'Location latitude (decimal degrees).',
+  `longitude` decimal(10,6) NOT NULL DEFAULT '0.000000' COMMENT 'Location longitude (decimal degrees).',
+  `timezone` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Timezone (unused).',
+  `dst` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Daylight Savings Time (unused).',
+  `country` char(2) NOT NULL DEFAULT '' COMMENT 'Two letter ISO country code.',
+  KEY `pc` (`country`,`zip`),
+  KEY `zip` (`zip`),
+  KEY `latitude` (`latitude`),
+  KEY `longitude` (`longitude`),
+  KEY `country` (`country`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Location.module zipcode database.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -1787,4 +1889,4 @@ CREATE TABLE `watchdog` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-06-30 19:04:39
+-- Dump completed on 2016-07-27 22:00:13
