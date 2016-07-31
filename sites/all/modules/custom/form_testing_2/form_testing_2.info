@@ -1,0 +1,5 @@
+name = Form Testing 2
+description = A second module for testing form development.
+package = Build a Module
+core = 7.x
+files[] = form_testing_2.module

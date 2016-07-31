@@ -16,6 +16,58 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `acl`
+--
+
+DROP TABLE IF EXISTS `acl`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `acl` (
+  `acl_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Primary key: unique ACL ID.',
+  `module` varchar(255) NOT NULL COMMENT 'The name of the module that created this ACL entry.',
+  `name` varchar(255) DEFAULT NULL COMMENT 'A name (or other identifying information) for this ACL entry, given by the module that created it.',
+  `number` int(11) DEFAULT NULL COMMENT 'A number for this ACL entry, given by the module that created it; use either ’name’ or ’number’.',
+  PRIMARY KEY (`acl_id`),
+  KEY `module_name_number` (`module`(64),`name`(64),`number`),
+  KEY `module_number` (`module`(64),`number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='The base Access Control Lists table.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `acl_node`
+--
+
+DROP TABLE IF EXISTS `acl_node`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `acl_node` (
+  `acl_id` int(11) NOT NULL DEFAULT '0' COMMENT 'The acl.acl_id of the entry.',
+  `nid` int(11) NOT NULL DEFAULT '0' COMMENT 'The node.nid to grant permissions for.',
+  `grant_view` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Whether to grant "view" permission.',
+  `grant_update` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Whether to grant "update" permission.',
+  `grant_delete` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Whether to grant "delete" permission.',
+  `priority` smallint(6) NOT NULL DEFAULT '0' COMMENT 'The priority of this grant record (for hook_node_access_records()).',
+  PRIMARY KEY (`acl_id`,`nid`),
+  KEY `nid` (`nid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Identifies nodes to which the referenced acl entry...';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `acl_user`
+--
+
+DROP TABLE IF EXISTS `acl_user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `acl_user` (
+  `acl_id` int(11) NOT NULL DEFAULT '0' COMMENT 'The acl.acl_id of the entry.',
+  `uid` int(11) NOT NULL DEFAULT '0' COMMENT 'The user.uid to which this acl entry applies.',
+  PRIMARY KEY (`acl_id`,`uid`),
+  KEY `uid` (`uid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Identifies users to which the referenced acl entry applies.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `actions`
 --
 
@@ -45,7 +97,8 @@ CREATE TABLE `authmap` (
   `authname` varchar(128) NOT NULL DEFAULT '' COMMENT 'Unique authentication name.',
   `module` varchar(128) NOT NULL DEFAULT '' COMMENT 'Module which is controlling the authentication.',
   PRIMARY KEY (`aid`),
-  UNIQUE KEY `authname` (`authname`)
+  UNIQUE KEY `authname` (`authname`),
+  KEY `uid_module` (`uid`,`module`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Stores distributed authentication mapping.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -89,7 +142,7 @@ CREATE TABLE `block` (
   PRIMARY KEY (`bid`),
   UNIQUE KEY `tmd` (`theme`,`module`,`delta`),
   KEY `list` (`theme`,`status`,`region`,`weight`,`module`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8 COMMENT='Stores block settings, such as region and visibility...';
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8 COMMENT='Stores block settings, such as region and visibility...';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -588,7 +641,7 @@ CREATE TABLE `field_config` (
   KEY `storage_module` (`storage_module`),
   KEY `type` (`type`),
   KEY `storage_type` (`storage_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -609,7 +662,7 @@ CREATE TABLE `field_config_instance` (
   PRIMARY KEY (`id`),
   KEY `field_name_bundle` (`field_name`,`entity_type`,`bundle`),
   KEY `deleted` (`deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -667,6 +720,37 @@ CREATE TABLE `field_data_comment_body` (
   KEY `language` (`language`),
   KEY `comment_body_format` (`comment_body_format`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Data storage for field 1 (comment_body)';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `field_data_endpoints`
+--
+
+DROP TABLE IF EXISTS `field_data_endpoints`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `field_data_endpoints` (
+  `entity_type` varchar(128) NOT NULL DEFAULT '' COMMENT 'The entity type this data is attached to',
+  `bundle` varchar(128) NOT NULL DEFAULT '' COMMENT 'The field instance bundle to which this row belongs, used when deleting a field instance',
+  `deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'A boolean indicating whether this data item has been deleted',
+  `entity_id` int(10) unsigned NOT NULL COMMENT 'The entity id this data is attached to',
+  `revision_id` int(10) unsigned DEFAULT NULL COMMENT 'The entity revision id this data is attached to, or NULL if the entity type is not versioned',
+  `language` varchar(32) NOT NULL DEFAULT '' COMMENT 'The language for this data item.',
+  `delta` int(10) unsigned NOT NULL COMMENT 'The sequence number for this data item, used for multi-value fields',
+  `endpoints_entity_type` varchar(255) NOT NULL DEFAULT '' COMMENT 'Entity_type of this relation end-point.',
+  `endpoints_entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity_id of this relation end-point.',
+  `endpoints_r_index` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'The index of this row in this relation. The highest index in the relation is stored as "arity" in the relation table.',
+  PRIMARY KEY (`entity_type`,`entity_id`,`deleted`,`delta`,`language`),
+  KEY `entity_type` (`entity_type`),
+  KEY `bundle` (`bundle`),
+  KEY `deleted` (`deleted`),
+  KEY `entity_id` (`entity_id`),
+  KEY `revision_id` (`revision_id`),
+  KEY `language` (`language`),
+  KEY `endpoints_entity_type` (`endpoints_entity_type`),
+  KEY `endpoints_entity_id` (`endpoints_entity_id`),
+  KEY `endpoints_r_index` (`endpoints_r_index`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Data storage for field 10 (endpoints)';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -809,6 +893,34 @@ CREATE TABLE `field_data_field_location` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `field_data_field_subuser_limit`
+--
+
+DROP TABLE IF EXISTS `field_data_field_subuser_limit`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `field_data_field_subuser_limit` (
+  `entity_type` varchar(128) NOT NULL DEFAULT '' COMMENT 'The entity type this data is attached to',
+  `bundle` varchar(128) NOT NULL DEFAULT '' COMMENT 'The field instance bundle to which this row belongs, used when deleting a field instance',
+  `deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'A boolean indicating whether this data item has been deleted',
+  `entity_id` int(10) unsigned NOT NULL COMMENT 'The entity id this data is attached to',
+  `revision_id` int(10) unsigned DEFAULT NULL COMMENT 'The entity revision id this data is attached to, or NULL if the entity type is not versioned',
+  `language` varchar(32) NOT NULL DEFAULT '' COMMENT 'The language for this data item.',
+  `delta` int(10) unsigned NOT NULL COMMENT 'The sequence number for this data item, used for multi-value fields',
+  `field_subuser_limit_value` varchar(255) DEFAULT NULL,
+  `field_subuser_limit_format` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`entity_type`,`entity_id`,`deleted`,`delta`,`language`),
+  KEY `entity_type` (`entity_type`),
+  KEY `bundle` (`bundle`),
+  KEY `deleted` (`deleted`),
+  KEY `entity_id` (`entity_id`),
+  KEY `revision_id` (`revision_id`),
+  KEY `language` (`language`),
+  KEY `field_subuser_limit_format` (`field_subuser_limit_format`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Data storage for field 11 (field_subuser_limit)';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `field_data_field_tags`
 --
 
@@ -918,6 +1030,37 @@ CREATE TABLE `field_revision_comment_body` (
   KEY `language` (`language`),
   KEY `comment_body_format` (`comment_body_format`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Revision archive storage for field 1 (comment_body)';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `field_revision_endpoints`
+--
+
+DROP TABLE IF EXISTS `field_revision_endpoints`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `field_revision_endpoints` (
+  `entity_type` varchar(128) NOT NULL DEFAULT '' COMMENT 'The entity type this data is attached to',
+  `bundle` varchar(128) NOT NULL DEFAULT '' COMMENT 'The field instance bundle to which this row belongs, used when deleting a field instance',
+  `deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'A boolean indicating whether this data item has been deleted',
+  `entity_id` int(10) unsigned NOT NULL COMMENT 'The entity id this data is attached to',
+  `revision_id` int(10) unsigned NOT NULL COMMENT 'The entity revision id this data is attached to',
+  `language` varchar(32) NOT NULL DEFAULT '' COMMENT 'The language for this data item.',
+  `delta` int(10) unsigned NOT NULL COMMENT 'The sequence number for this data item, used for multi-value fields',
+  `endpoints_entity_type` varchar(255) NOT NULL DEFAULT '' COMMENT 'Entity_type of this relation end-point.',
+  `endpoints_entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity_id of this relation end-point.',
+  `endpoints_r_index` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'The index of this row in this relation. The highest index in the relation is stored as "arity" in the relation table.',
+  PRIMARY KEY (`entity_type`,`entity_id`,`revision_id`,`deleted`,`delta`,`language`),
+  KEY `entity_type` (`entity_type`),
+  KEY `bundle` (`bundle`),
+  KEY `deleted` (`deleted`),
+  KEY `entity_id` (`entity_id`),
+  KEY `revision_id` (`revision_id`),
+  KEY `language` (`language`),
+  KEY `endpoints_entity_type` (`endpoints_entity_type`),
+  KEY `endpoints_entity_id` (`endpoints_entity_id`),
+  KEY `endpoints_r_index` (`endpoints_r_index`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Revision archive storage for field 10 (endpoints)';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1057,6 +1200,34 @@ CREATE TABLE `field_revision_field_location` (
   KEY `language` (`language`),
   KEY `field_location_lid` (`field_location_lid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Revision archive storage for field 8 (field_location)';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `field_revision_field_subuser_limit`
+--
+
+DROP TABLE IF EXISTS `field_revision_field_subuser_limit`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `field_revision_field_subuser_limit` (
+  `entity_type` varchar(128) NOT NULL DEFAULT '' COMMENT 'The entity type this data is attached to',
+  `bundle` varchar(128) NOT NULL DEFAULT '' COMMENT 'The field instance bundle to which this row belongs, used when deleting a field instance',
+  `deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'A boolean indicating whether this data item has been deleted',
+  `entity_id` int(10) unsigned NOT NULL COMMENT 'The entity id this data is attached to',
+  `revision_id` int(10) unsigned NOT NULL COMMENT 'The entity revision id this data is attached to',
+  `language` varchar(32) NOT NULL DEFAULT '' COMMENT 'The language for this data item.',
+  `delta` int(10) unsigned NOT NULL COMMENT 'The sequence number for this data item, used for multi-value fields',
+  `field_subuser_limit_value` varchar(255) DEFAULT NULL,
+  `field_subuser_limit_format` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`entity_type`,`entity_id`,`revision_id`,`deleted`,`delta`,`language`),
+  KEY `entity_type` (`entity_type`),
+  KEY `bundle` (`bundle`),
+  KEY `deleted` (`deleted`),
+  KEY `entity_id` (`entity_id`),
+  KEY `revision_id` (`revision_id`),
+  KEY `language` (`language`),
+  KEY `field_subuser_limit_format` (`field_subuser_limit_format`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Revision archive storage for field 11 (field_subuser_limit)';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1253,7 +1424,7 @@ DROP TABLE IF EXISTS `history`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `history` (
   `uid` int(11) NOT NULL DEFAULT '0' COMMENT 'The users.uid that read the node nid.',
-  `nid` int(11) NOT NULL DEFAULT '0' COMMENT 'The node.nid that was read.',
+  `nid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'The node.nid that was read.',
   `timestamp` int(11) NOT NULL DEFAULT '0' COMMENT 'The Unix timestamp at which the read occurred.',
   PRIMARY KEY (`uid`,`nid`),
   KEY `nid` (`nid`)
@@ -1316,7 +1487,7 @@ CREATE TABLE `location` (
   `source` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Source of the latitude and longitude data (Geocoder, user entered, invalid, etc.)',
   `is_primary` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Is this the primary location of an object? (unused, civicrm legacy field?).',
   PRIMARY KEY (`lid`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='Locational data managed by location.module.';
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COMMENT='Locational data managed by location.module.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1352,6 +1523,20 @@ CREATE TABLE `location_instance` (
   KEY `genid` (`genid`),
   KEY `lid` (`lid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='N:M join table to join locations to other tables.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `location_phone`
+--
+
+DROP TABLE IF EXISTS `location_phone`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `location_phone` (
+  `lid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'location.lid',
+  `phone` varchar(31) NOT NULL DEFAULT '' COMMENT 'Phone number',
+  PRIMARY KEY (`lid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='location_phone.module location supplementary table.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1464,7 +1649,7 @@ CREATE TABLE `menu_links` (
   KEY `menu_plid_expand_child` (`menu_name`,`plid`,`expanded`,`has_children`),
   KEY `menu_parents` (`menu_name`,`p1`,`p2`,`p3`,`p4`,`p5`,`p6`,`p7`,`p8`,`p9`),
   KEY `router_path` (`router_path`(128))
-) ENGINE=InnoDB AUTO_INCREMENT=502 DEFAULT CHARSET=utf8 COMMENT='Contains the individual links within a menu.';
+) ENGINE=InnoDB AUTO_INCREMENT=551 DEFAULT CHARSET=utf8 COMMENT='Contains the individual links within a menu.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1539,7 +1724,7 @@ CREATE TABLE `node` (
   KEY `tnid` (`tnid`),
   KEY `translate` (`translate`),
   KEY `language` (`language`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COMMENT='The base table for nodes.';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COMMENT='The base table for nodes.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1602,7 +1787,7 @@ CREATE TABLE `node_revision` (
   PRIMARY KEY (`vid`),
   KEY `nid` (`nid`),
   KEY `uid` (`uid`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8 COMMENT='Stores information about each saved version of a node.';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COMMENT='Stores information about each saved version of a node.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1646,7 +1831,7 @@ CREATE TABLE `queue` (
   PRIMARY KEY (`item_id`),
   KEY `name_created` (`name`,`created`),
   KEY `expire` (`expire`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8 COMMENT='Stores items in queues.';
+) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8 COMMENT='Stores items in queues.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1694,6 +1879,80 @@ CREATE TABLE `registry_file` (
   `hash` varchar(64) NOT NULL COMMENT 'sha-256 hash of the file’s contents when last parsed.',
   PRIMARY KEY (`filename`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Files parsed to build the registry.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `relation`
+--
+
+DROP TABLE IF EXISTS `relation`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `relation` (
+  `rid` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Unique relation id (entity id).',
+  `relation_type` varchar(255) NOT NULL DEFAULT '' COMMENT 'Relation type (see relation_type table).',
+  `vid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'The current relation_revision.vid version identifier.',
+  `uid` int(11) NOT NULL DEFAULT '0' COMMENT 'The users.uid that owns this relation; initially, this is the user that created it.',
+  `created` int(11) NOT NULL DEFAULT '0' COMMENT 'The Unix timestamp when the relation was created.',
+  `changed` int(11) NOT NULL DEFAULT '0' COMMENT 'The Unix timestamp when the relation was most recently saved.',
+  `arity` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'The number rows in this relation. Cannot exceed max_arity, or be less than min_arity in relation_type table.',
+  PRIMARY KEY (`rid`),
+  KEY `relation_types` (`relation_type`,`rid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Keeps track of relation entities.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `relation_bundles`
+--
+
+DROP TABLE IF EXISTS `relation_bundles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `relation_bundles` (
+  `relation_type` varchar(255) NOT NULL DEFAULT '' COMMENT 'The relation type.',
+  `entity_type` varchar(255) NOT NULL DEFAULT '' COMMENT 'Entity type that is available to this relation.',
+  `bundle` varchar(255) NOT NULL DEFAULT '' COMMENT 'Entity bundle that is available to this relation.',
+  `r_index` int(11) NOT NULL DEFAULT '0' COMMENT 'Direction index for relations: 0=from, 1=to. The index is ignored if the directional column in the relation_type table is 0.'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Relation type available bundles';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `relation_revision`
+--
+
+DROP TABLE IF EXISTS `relation_revision`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `relation_revision` (
+  `rid` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Unique relation id (entity id).',
+  `relation_type` varchar(255) NOT NULL DEFAULT '' COMMENT 'Relation type (see relation_type table).',
+  `vid` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'The current relation_revision.vid version identifier.',
+  `uid` int(11) NOT NULL DEFAULT '0' COMMENT 'The users.uid that owns this relation; initially, this is the user that created it.',
+  `changed` int(11) NOT NULL DEFAULT '0' COMMENT 'The Unix timestamp when the relation was most recently saved.',
+  `arity` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'The number rows in this relation. Cannot exceed max_arity, or be less than min_arity in relation_type table.',
+  PRIMARY KEY (`vid`),
+  KEY `rid_vid` (`rid`,`vid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Keeps track of relation entities.';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `relation_type`
+--
+
+DROP TABLE IF EXISTS `relation_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `relation_type` (
+  `relation_type` varchar(255) NOT NULL DEFAULT '' COMMENT 'The machine-readable name of this type.',
+  `label` varchar(255) NOT NULL DEFAULT '' COMMENT 'The human-readable name of this type.',
+  `reverse_label` varchar(255) NOT NULL DEFAULT '' COMMENT 'The reverse human-readable name of this type. Only used for directional relations.',
+  `directional` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Whether this relation type is directional. If not, all indexes are ignored.',
+  `transitive` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Whether this relation type is transitive.',
+  `r_unique` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Whether relations of this type are unique.',
+  `min_arity` int(10) unsigned NOT NULL DEFAULT '2' COMMENT 'The minimum number of rows that can make up a relation of this type.',
+  `max_arity` int(10) unsigned NOT NULL DEFAULT '2' COMMENT 'The maximum number of rows that can make up a relation of this type. Similar to field cardinality.',
+  PRIMARY KEY (`relation_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Relation settings.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1820,7 +2079,7 @@ DROP TABLE IF EXISTS `sequences`;
 CREATE TABLE `sequences` (
   `value` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'The value of the sequence.',
   PRIMARY KEY (`value`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8 COMMENT='Stores IDs.';
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COMMENT='Stores IDs.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2113,7 +2372,7 @@ CREATE TABLE `watchdog` (
   KEY `type` (`type`),
   KEY `uid` (`uid`),
   KEY `severity` (`severity`)
-) ENGINE=InnoDB AUTO_INCREMENT=657 DEFAULT CHARSET=utf8 COMMENT='Table that contains logs of all system events.';
+) ENGINE=InnoDB AUTO_INCREMENT=689 DEFAULT CHARSET=utf8 COMMENT='Table that contains logs of all system events.';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2149,4 +2408,4 @@ CREATE TABLE `zipcodes` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-07-27 23:03:18
+-- Dump completed on 2016-07-31 18:48:19
